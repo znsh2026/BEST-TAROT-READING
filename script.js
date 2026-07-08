@@ -1,5 +1,5 @@
 // script.js — renders decks, all cards, and a 3-card reading UI.
-// Updated: includes a full upright/reversed meanings dictionary and expanded reading text.
+// Updated: richer randomized tips and affirmations per draw
 // Uses local SVG placeholders for covers and cards included in the repo.
 
 document.addEventListener('DOMContentLoaded', ()=> {
@@ -200,6 +200,142 @@ document.addEventListener('DOMContentLoaded', ()=> {
   function sanitize(name){
     return name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
   }
+  function rand(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  // Richer tip templates grouped by suit and major arcana with multiple variants
+  const suitTips = {
+    Wands: {
+      upright: [
+        'Act on a small inspired idea today to build momentum.',
+        'A bold but planned step will move you forward — sketch a short plan.',
+        'Channel creative energy into one focused task and begin.'
+      ],
+      reversed: [
+        'Pause and plan; avoid burning energy on unfocused actions.',
+        'Refine your idea rather than rushing; prepare before the push.',
+        'Temper enthusiasm with concrete steps to avoid wasted effort.'
+      ]
+    },
+    Cups: {
+      upright: [
+        'Share your feelings with someone you trust to deepen connection.',
+        'Create a small ritual of gratitude to open your heart.',
+        'Say yes to an invitation that nourishes your emotions.'
+      ],
+      reversed: [
+        'Name what you are avoiding and consider one small step to address it.',
+        'Practice gentle boundaries when emotions feel overwhelming.',
+        'Write a letter you don\'t have to send to process inner feelings.'
+      ]
+    },
+    Swords: {
+      upright: [
+        'Clarify your thoughts by writing a short pros/cons list.',
+        'Speak one truth kindly today; honesty will create momentum.',
+        'Research facts before deciding to ensure clear judgment.'
+      ],
+      reversed: [
+        'Step back and breathe before reacting; seek more information.',
+        'Slow your pace and avoid arguments until clarity arrives.',
+        'Use a calming practice to reduce mental overwhelm before deciding.'
+      ]
+    },
+    Pentacles: {
+      upright: [
+        'Create a simple checklist to make steady material progress.',
+        'Invest a small, practical effort toward a long-term goal today.',
+        'Tend to one financial or health habit with care and consistency.'
+      ],
+      reversed: [
+        'Prioritize essentials; eliminate one nonessential task or expense.',
+        'Ask for help where resources feel stretched; share the load.',
+        'Break a big project into tiny, repeatable steps to rebuild momentum.'
+      ]
+    }
+  };
+
+  // Major arcana tips: multiple variants for core majors; fallback generic arrays
+  const majorTips = {
+    'The Fool':{upright:['Take a small, brave step toward something new.','Try a harmless experiment and learn from it.'], reversed:['Gather data before leaping.','Create a checklist to feel more grounded.']},
+    'The Magician':{upright:['Use one skill you excel at to move forward.','Turn intention into action by picking the first small task.'], reversed:['Align your motives and make a clear plan.','Re-focus scattered energy into a single useful action.']},
+    'The High Priestess':{upright:['Spend quiet time noticing inner nudges.','Keep a dream log for the next few mornings.'], reversed:['Journal to reconnect with your inner voice.','Pause and ask: what am I not noticing?']},
+    'The Empress':{upright:['Nurture a small creative project today.','Tend one relationship with an act of care.'], reversed:['Schedule gentle rest or a creative break.','Set a boundary that protects your creative energy.']},
+    'The Emperor':{upright:['Set one clear boundary or structure for your day.','Create a small schedule to bring stability.'], reversed:['Soften strict expectations; allow flexibility.','Delegate a task that doesn\'t need your control.']},
+    'The Hierophant':{upright:['Seek advice from someone experienced.','Follow an established step that others use.'], reversed:['Explore alternative approaches openly.','Create your own ritual in place of an old rule.']},
+    'The Lovers':{upright:['Have an honest conversation about what matters.','Choose alignment over pleasing others.'], reversed:['Reflect on your values privately before deciding.','Write down pros and cons of each choice to reveal priorities.']},
+    'The Chariot':{upright:['Identify the next decisive move and commit.','Celebrate a recent small victory to strengthen momentum.'], reversed:['Regain control by organizing one area of your life.','Slow down and pick one clear objective to pursue.']},
+    'Strength':{upright:['Practice a small compassionate habit toward yourself.','Use calm persistence on a tough task.'], reversed:['Name one fear and take a gentle counter-action.','Reach out for encouragement rather than pushing alone.']},
+    'The Hermit':{upright:['Schedule quiet time to reflect without interruption.','Ask yourself the core question you\'ve been avoiding.'], reversed:['Share your struggle with a trusted friend for perspective.','Balance solitude by joining a short conversation or meetup.']},
+    'Wheel of Fortune':{upright:['Notice cycles and choose an entry point to act.','Position yourself to benefit from change by preparing one thing.'], reversed:['Look for lessons in delays and adjust plans.','Accept change and remove one rigid expectation.']},
+    'Justice':{upright:['Gather facts and make a fair choice today.','Write out your options and weigh them honestly.'], reversed:['Acknowledge any bias and correct course.','Take responsibility for unfinished obligations.']},
+    'The Hanged Man':{upright:['Allow a necessary pause to gain perspective.','Try seeing the situation from a new angle for one hour.'], reversed:['Decide on one small action to end stuckness.','Practice releasing control over an outcome you cannot change.']},
+    'Death':{upright:['Name one ending and plan a gentle next beginning.','Clear a small space to symbolize release and renewal.'], reversed:['Identify what you are clinging to and set a tiny boundary.','Write a short goodbye ritual to help transition.']},
+    'Temperance':{upright:['Combine two approaches to create a middle path.','Slow your pace and blend work with rest.'], reversed:['Adjust extremes by removing one overindulgence.','Create a small daily routine to restore balance.']},
+    'The Devil':{upright:['Notice patterns and pick one to start changing.','Create a simple accountability step to break a chain.'], reversed:['Celebrate a recent release and reinforce the change.','List triggers and plan one alternative response.']},
+    'The Tower':{upright:['Use upheaval to clear old structures; plan a rebuild.','Name one truth exposed and consider next steps.'], reversed:['Stabilize what remains and choose one constructive action.','Take time to grieve disruption and then plan a small rebuild.']},
+    'The Star':{upright:['Do one restorative activity that renews hope.','Write a short list of small wishes and one action for each.'], reversed:['Start with tiny acts of self-care to rebuild trust.','Practice one simple breath or movement habit tonight.']},
+    'The Moon':{upright:['Record dreams and intuition; look for patterns.','Slow down and seek clarity before deciding.'], reversed:['Test assumptions by gathering simple evidence.','Talk through confusing feelings with a friend.']},
+    'The Sun':{upright:['Share joy with someone; celebrate a success.','Do a confident act today that expresses who you are.'], reversed:['Create a small moment of play to lift spirits.','Acknowledge and savor one pleasant achievement.']},
+    'Judgement':{upright:['Answer a personal call to change with one committed step.','Write down what you feel called to release and begin.'], reversed:['Practice forgiveness for past mistakes and set a new intention.','Take one honest step toward your renewed purpose.']},
+    'The World':{upright:['Recognize completion and schedule rest or celebration.','Reflect on lessons learned and plan the next cycle.'], reversed:['Close a loose end this week to create space for a new start.','Acknowledge small wins and prepare for the next chapter.']}
+  };
+
+  // Affirmation pools: general and some card-specific collections
+  const generalAffirmations = [
+    'I am open to guidance and act with wise intention.',
+    'I create with clarity and trust the process.',
+    'I welcome change and grow stronger through it.'
+  ];
+  const reversedAffirmations = [
+    'I release what no longer serves me and choose clarity.',
+    'I let go of fear and choose steady, kind action.',
+    'I forgive myself and make room for new choices.'
+  ];
+
+  const cardAffirmations = {
+    'The Fool':['I welcome new beginnings with curiosity and courage.','I trust the path as I step forward with an open heart.'],
+    'The Magician':['I am capable and create with focused intention.','My skills align with my goals; I act with purpose.'],
+    'The Empress':['I nurture and receive abundance easily.','I honor my creativity and give it space to grow.'],
+    'The Sun':['I shine with confidence and joy.','I celebrate my achievements and share my light.'],
+    'The Star':['I am guided and healing flows to me.','Hope softens my path and restores my faith.'],
+    'The Moon':['I trust my intuition and honor my inner world.','I explore my inner landscape with compassion.']
+  };
+
+  function generateTip(name, reversed){
+    // Suit-based tips first
+    if(name.includes('Wands')) return rand(reversed ? suitTips.Wands.reversed : suitTips.Wands.upright);
+    if(name.includes('Cups')) return rand(reversed ? suitTips.Cups.reversed : suitTips.Cups.upright);
+    if(name.includes('Swords')) return rand(reversed ? suitTips.Swords.reversed : suitTips.Swords.upright);
+    if(name.includes('Pentacles')) return rand(reversed ? suitTips.Pentacles.reversed : suitTips.Pentacles.upright);
+
+    // Major arcana
+    if(majorTips[name]){
+      const pool = reversed ? majorTips[name].reversed || majorTips[name].upright : majorTips[name].upright;
+      return rand(pool);
+    }
+
+    // fallback generic tips
+    const generic = reversed ? [
+      'Take one small step toward clarity and let the rest unfold.',
+      'Pause and breathe; then choose a practical next action.'
+    ] : [
+      'Pick one small, concrete step and do it today.',
+      'Break your goal into a tiny action and repeat it.'
+    ];
+    return rand(generic);
+  }
+
+  function generateAffirmation(name, reversed){
+    if(reversed) return rand(reversedAffirmations);
+    if(cardAffirmations[name]) return rand(cardAffirmations[name]);
+    // suit-based uplifting affirmations
+    if(name.includes('Wands')) return rand(['I act with inspired courage and clear purpose.','My creative spark guides me to meaningful action.']);
+    if(name.includes('Cups')) return rand(['I open my heart and honor my feelings.','I attract compassion and authentic connection.']);
+    if(name.includes('Swords')) return rand(['My mind is clear and I speak with honest care.','I discern truth and act with integrity.']);
+    if(name.includes('Pentacles')) return rand(['I build steadily toward lasting abundance.','I steward my resources with thoughtful care.']);
+
+    return rand(generalAffirmations);
+  }
 
   function createDeckTile(deck){
     const tile = document.createElement('article');
@@ -299,15 +435,21 @@ document.addEventListener('DOMContentLoaded', ()=> {
       const cardMeaning = meanings[name] || {upright: 'Meaning not found.', reversed: 'Meaning not found.'};
       p.textContent = reversed ? cardMeaning.reversed : cardMeaning.upright;
 
-      // Add a short practical tip and affirmation
+      // Add a short practical tip and affirmation (randomized)
       const tip = document.createElement('p');
       tip.style.fontStyle = 'italic';
       tip.style.marginTop = '6px';
-      tip.textContent = `${reversed ? 'Practical tip:' : 'Practical tip:'} ${generateTip(name, reversed)}\nAffirmation: ${generateAffirmation(name, reversed)}`;
+      tip.textContent = `${reversed ? 'Practical tip:' : 'Practical tip:'} ${generateTip(name, reversed)}`;
+
+      const aff = document.createElement('p');
+      aff.style.fontWeight = '600';
+      aff.style.marginTop = '8px';
+      aff.textContent = `Affirmation: ${generateAffirmation(name, reversed)}`;
 
       block.appendChild(h);
       block.appendChild(p);
       block.appendChild(tip);
+      block.appendChild(aff);
       readingMeaningsEl.appendChild(block);
     });
     // small animation
@@ -315,59 +457,6 @@ document.addEventListener('DOMContentLoaded', ()=> {
       const cards = readingCardsEl.querySelectorAll('.reading-card');
       cards.forEach((c,i)=> c.style.transform = `translateY(0) rotate(${(i-1)*2}deg)`);
     },50);
-  }
-
-  function generateTip(name, reversed){
-    // Small set of generalised tips based on suit or major arcana
-    if(name.startsWith('Ace of')) return reversed ? 'Revisit your initial idea; refine it before acting.' : 'Take a concrete first step to manifest this opportunity.';
-    if(['Wands','Cups','Swords','Pentacles'].some(s=> name.includes(s))) {
-      if(name.includes('Wands')) return reversed ? 'Slow down and plan to avoid wasted energy.' : 'Act on inspired ideas with modest planning.';
-      if(name.includes('Cups')) return reversed ? 'Name your feelings and share with a trusted person.' : 'Open your heart to connection and gratitude.';
-      if(name.includes('Swords')) return reversed ? 'Get clarity before arguing; listen first.' : 'State your truth clearly and kindly.';
-      if(name.includes('Pentacles')) return reversed ? 'Create a simple budget or task list.' : 'Invest your time with consistent effort.';
-    }
-    // Major arcana quick tips
-    if(['The Fool','The Magician','The High Priestess','The Empress','The Emperor','The Hierophant','The Lovers','The Chariot','Strength','The Hermit','Wheel of Fortune','Justice','The Hanged Man','Death','Temperance','The Devil','The Tower','The Star','The Moon','The Sun','Judgement','The World'].includes(name)){
-      switch(name){
-        case 'The Fool': return reversed ? 'Prepare rather than rush; gather information.' : 'Take a small brave step toward what excites you.';
-        case 'The Magician': return reversed ? 'Clarify your goals and align your actions.' : 'Use one skill today to move your project forward.';
-        case 'The High Priestess': return reversed ? 'Journal to reconnect with your inner voice.' : 'Notice your dreams and quiet prompts.';
-        case 'The Empress': return reversed ? 'Make space for creativity and rest.' : 'Nurture a project or relationship with small acts.';
-        case 'The Emperor': return reversed ? 'Loosen overly strict expectations.' : 'Set one clear boundary to stabilize your day.';
-        case 'The Hierophant': return reversed ? 'Consider alternative perspectives.' : 'Seek mentorship or established guidance.';
-        case 'The Lovers': return reversed ? 'Reflect on what you truly value.' : 'Have an honest conversation about needs.';
-        case 'The Chariot': return reversed ? 'Reclaim small wins to rebuild momentum.' : 'Plan the next decisive step and commit.';
-        case 'Strength': return reversed ? 'Practice kindness toward yourself.' : 'Use gentle persistence to face a challenge.';
-        case 'The Hermit': return reversed ? 'Reach out to close friends for perspective.' : 'Take quiet time to reflect without distractions.';
-        case 'Wheel of Fortune': return reversed ? 'Adapt to changes rather than resisting.' : 'Ride the change and position yourself for growth.';
-        case 'Justice': return reversed ? 'Own any mistakes and make amends.' : 'Make a fair decision with clear evidence.';
-        case 'The Hanged Man': return reversed ? 'Release the need to control outcomes.' : 'Allow a pause to gain fresh insight.';
-        case 'Death': return reversed ? 'Acknowledge loss and identify one next step.' : 'Let go of what no longer serves to welcome new life.';
-        case 'Temperance': return reversed ? 'Slow down and rebalance daily routines.' : 'Blend two approaches to create harmony.';
-        case 'The Devil': return reversed ? 'Celebrate small steps toward freedom.' : 'Name one pattern you can begin to shift.';
-        case 'The Tower': return reversed ? 'Use disruption to re-evaluate foundations.' : 'Accept the shake-up as a clearing for truth.';
-        case 'The Star': return reversed ? 'Practice small acts of hope and self-care.' : 'Do one restorative thing that replenishes you.';
-        case 'The Moon': return reversed ? 'Seek evidence to dispel fear-driven thoughts.' : 'Note dreams and intuition; record them.';
-        case 'The Sun': return reversed ? 'Celebrate small successes and invite joy.' : 'Share your light with someone today.';
-        case 'Judgement': return reversed ? 'Practice self-forgiveness and a new commitment.' : 'Answer the call to align with your purpose.';
-        case 'The World': return reversed ? 'Complete one small task to close the cycle.' : 'Recognize your achievements and rest into completion.';
-        default: return 'Take one small, practical next step.';
-      }
-    }
-    return 'Take a practical small step aligned with this theme.';
-  }
-
-  function generateAffirmation(name, reversed){
-    // Short affirmations that match card energy
-    if(reversed) return 'I release what no longer serves me and choose clarity.';
-    if(name.includes('Fool') || name==='The Fool') return 'I welcome new beginnings with curiosity and courage.';
-    if(name.includes('Magician')) return 'I am capable and create with focused intention.';
-    if(name.includes('Empress')) return 'I nurture and receive abundance easily.';
-    if(name.includes('Sun')) return 'I shine with confidence and joy.';
-    if(name.includes('Moon')) return 'I trust my intuition and honor my inner world.';
-    if(name.includes('Star')) return 'I am guided and healing flows to me.';
-    // General positive ones
-    return 'I am open to guidance and act with wise intention.';
   }
 
   closeBtn.addEventListener('click', closeReading);
