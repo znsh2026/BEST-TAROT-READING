@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <defs>
+    <linearGradient id="h" x1="0" x2="1"><stop offset="0" stop-color="#f0fff0"/><stop offset="1" stop-color="#fff6e6"/></linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#h)" rx="18"/>
+  <text x="50%" y="50%" font-family="Arial,Helvetica" font-size="36" text-anchor="middle" fill="#2f6f44" font-weight="700">Botanical Tarot</text>
+</svg>
